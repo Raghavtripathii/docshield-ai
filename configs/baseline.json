@@ -1,0 +1,17 @@
+{
+  "experiment_name": "layoutlmv3_funsd_baseline",
+  "model_name": "microsoft/layoutlmv3-base",
+  "dataset_name": "nielsr/funsd",
+  "seed": 42,
+  "max_length": 512,
+  "learning_rate": 5e-5,
+  "train_batch_size": 2,
+  "eval_batch_size": 2,
+  "gradient_accumulation_steps": 2,
+  "num_train_epochs": 3,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.1,
+  "fp16": true,
+  "save_strategy": "epoch",
+  "logging_steps": 10
+}
