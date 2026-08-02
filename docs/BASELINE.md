@@ -2,25 +2,25 @@
 
 ## Objective
 
-Establish a reproducible clean-document baseline for DocShield AI before introducing document corruption and robustness interventions.
+Establish a reproducible clean-document baseline for DocShield AI before introducing document corruption and robustness experiments.
 
 ---
 
 ## Model
 
-- Architecture: LayoutLMv3
-- Checkpoint: microsoft/layoutlmv3-base
-- Task: Multimodal Token Classification
-- Dataset: FUNSD
+- **Architecture:** LayoutLMv3
+- **Checkpoint:** `microsoft/layoutlmv3-base`
+- **Task:** Multimodal Token Classification
+- **Dataset:** FUNSD
 
 ---
 
 ## Input Modalities
 
-The model jointly receives:
+The model jointly processes:
 
 - document image
-- OCR tokens
+- tokenized text
 - normalized bounding boxes
 - entity labels
 
@@ -28,52 +28,53 @@ The model jointly receives:
 
 ## Training Protocol
 
-Training configuration is versioned in:
+The baseline model is trained using the versioned configuration stored in:
 
-```
+```text
 configs/baseline.json
 ```
 
-Randomness is controlled through the centralized reproducibility utilities.
+Randomness and reproducibility are controlled through the project's centralized reproducibility utilities.
 
 ---
 
 ## Evaluation
 
-Metrics include:
+The baseline is evaluated using entity-level metrics:
 
 - Precision
 - Recall
 - F1-score
-- Accuracy
-
-Primary evaluation metric:
-
-**Entity-level F1**
-
----
-
-## Results
 
 Overall evaluation metrics are stored in:
 
-```
+```text
 results/baseline_metrics.json
 ```
 
+---
+
+## Per-Class Performance
+
 Per-class metrics are stored in:
 
-```
+```text
 results/baseline_per_class.json
 ```
+
+| Entity | Precision | Recall | F1 |
+|---------|----------:|-------:|---:|
+| QUESTION | 0.7728 | 0.8303 | 0.8006 |
+| ANSWER | 0.7464 | 0.8335 | 0.7876 |
+| HEADER | 0.3932 | 0.3866 | 0.3898 |
 
 ---
 
 ## Error Analysis
 
-Prediction failures are analyzed in:
+Prediction failures, confidence distributions, confusion patterns, and document-level errors are analyzed in:
 
-```
+```text
 notebooks/06_error_analysis.ipynb
 ```
 
@@ -83,4 +84,4 @@ notebooks/06_error_analysis.ipynb
 
 This experiment establishes the clean-document reference baseline.
 
-Future robustness experiments compare corrupted-document performance against this baseline.
+Future robustness experiments evaluate the impact of document corruptions by comparing their performance against this baseline.
