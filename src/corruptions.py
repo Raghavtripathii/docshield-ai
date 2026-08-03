@@ -10,8 +10,6 @@ from PIL import Image
 
 @dataclass(frozen=True)
 class CorruptionResult:
-    """Container for a corrupted document image."""
-
     image: Image.Image
     corruption: str
     severity: int
@@ -21,12 +19,10 @@ class DocumentCorruptor:
 
     @staticmethod
     def _to_numpy(image: Image.Image) -> np.ndarray:
-        """Convert PIL image → NumPy RGB array."""
         return np.array(image.convert("RGB"))
 
     @staticmethod
     def _to_pil(image: np.ndarray) -> Image.Image:
-        """Convert NumPy RGB array → PIL image."""
         image = np.clip(image, 0, 255).astype(np.uint8)
         return Image.fromarray(image)
 
@@ -47,9 +43,6 @@ class DocumentCorruptor:
         corruption: Callable[..., Image.Image],
         severity: int,
     ) -> CorruptionResult:
-        """
-        Apply any corruption using a unified API.
-        """
 
         self._validate_severity(severity)
 
@@ -64,36 +57,12 @@ class DocumentCorruptor:
             severity=severity,
         )
 
-    ####################################################################
-    # Commit 32
-    # Gaussian Noise
-    ####################################################################
-
     def gaussian_noise(
         self,
         image: Image.Image,
         severity: int,
         seed: int | None = None,
     ) -> Image.Image:
-        """
-        Apply additive Gaussian noise.
-
-        Parameters
-        ----------
-        image:
-            Input PIL image.
-
-        severity:
-            Integer from 1 to 5.
-
-        seed:
-            Optional random seed for reproducibility.
-
-        Returns
-        -------
-        PIL.Image.Image
-            Noisy image.
-        """
 
         self._validate_severity(severity)
 
@@ -122,18 +91,32 @@ class DocumentCorruptor:
 
         return self._to_pil(noisy_image)
 
-    ####################################################################
-    # Remaining corruptions
-    ####################################################################
-
     def gaussian_blur(
         self,
         image: Image.Image,
         severity: int,
     ) -> Image.Image:
-        raise NotImplementedError(
-            "Implemented in Commit 33."
+
+        self._validate_severity(severity)
+
+        kernel_sizes = {
+            1: (3, 3),
+            2: (5, 5),
+            3: (7, 7),
+            4: (9, 9),
+            5: (11, 11),
+        }
+
+        image_array = self._to_numpy(image)
+
+        blurred = cv2.GaussianBlur(
+            image_array,
+            kernel_sizes[severity],
+            sigmaX=0,
+            sigmaY=0,
         )
+
+        return self._to_pil(blurred)
 
     def brightness(
         self,
