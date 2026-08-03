@@ -21,12 +21,12 @@ class DocumentCorruptor:
 
     @staticmethod
     def _to_numpy(image: Image.Image) -> np.ndarray:
-        """Convert PIL image → OpenCV RGB array."""
+        """Convert PIL image → NumPy RGB array."""
         return np.array(image.convert("RGB"))
 
     @staticmethod
     def _to_pil(image: np.ndarray) -> Image.Image:
-        """Convert OpenCV RGB array → PIL image."""
+        """Convert NumPy RGB array → PIL image."""
         image = np.clip(image, 0, 255).astype(np.uint8)
         return Image.fromarray(image)
 
@@ -44,7 +44,7 @@ class DocumentCorruptor:
     def apply(
         self,
         image: Image.Image,
-        corruption: Callable[[Image.Image, int], Image.Image],
+        corruption: Callable[..., Image.Image],
         severity: int,
     ) -> CorruptionResult:
         """
@@ -63,14 +63,68 @@ class DocumentCorruptor:
             corruption=corruption.__name__,
             severity=severity,
         )
+
+    ####################################################################
+    # Commit 32
+    # Gaussian Noise
+    ####################################################################
+
     def gaussian_noise(
         self,
         image: Image.Image,
         severity: int,
+        seed: int | None = None,
     ) -> Image.Image:
-        raise NotImplementedError(
-            "Implemented in Commit 32."
+        """
+        Apply additive Gaussian noise.
+
+        Parameters
+        ----------
+        image:
+            Input PIL image.
+
+        severity:
+            Integer from 1 to 5.
+
+        seed:
+            Optional random seed for reproducibility.
+
+        Returns
+        -------
+        PIL.Image.Image
+            Noisy image.
+        """
+
+        self._validate_severity(severity)
+
+        if seed is not None:
+            np.random.seed(seed)
+
+        image_array = self._to_numpy(image).astype(np.float32)
+
+        sigma_levels = {
+            1: 5,
+            2: 10,
+            3: 15,
+            4: 25,
+            5: 35,
+        }
+
+        sigma = sigma_levels[severity]
+
+        noise = np.random.normal(
+            loc=0.0,
+            scale=sigma,
+            size=image_array.shape,
         )
+
+        noisy_image = image_array + noise
+
+        return self._to_pil(noisy_image)
+
+    ####################################################################
+    # Remaining corruptions
+    ####################################################################
 
     def gaussian_blur(
         self,
