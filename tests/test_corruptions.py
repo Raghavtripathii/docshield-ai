@@ -60,9 +60,6 @@ def test_placeholder_methods():
     image = Image.new("RGB", (32, 32), "white")
 
     with pytest.raises(NotImplementedError):
-        corruptor.brightness(image, 3)
-
-    with pytest.raises(NotImplementedError):
         corruptor.jpeg_compression(image, 3)
 
     with pytest.raises(NotImplementedError):

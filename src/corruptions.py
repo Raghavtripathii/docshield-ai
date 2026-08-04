@@ -123,9 +123,24 @@ class DocumentCorruptor:
         image: Image.Image,
         severity: int,
     ) -> Image.Image:
-        raise NotImplementedError(
-            "Implemented in Commit 34."
-        )
+
+        self._validate_severity(severity)
+
+        factors = {
+            1: 0.90,
+            2: 0.75,
+            3: 0.60,
+            4: 0.45,
+            5: 0.30,
+        }
+
+        image_array = self._to_numpy(image).astype(np.float32)
+
+        factor = factors[severity]
+
+        darkened = image_array * factor
+
+        return self._to_pil(darkened)
 
     def jpeg_compression(
         self,
@@ -133,7 +148,6 @@ class DocumentCorruptor:
         severity: int,
     ) -> Image.Image:
         raise NotImplementedError(
-            "Implemented in Commit 35."
         )
 
     def rotation(
@@ -142,5 +156,4 @@ class DocumentCorruptor:
         severity: int,
     ) -> Image.Image:
         raise NotImplementedError(
-            "Implemented in Commit 36."
         )
