@@ -58,6 +58,3 @@ def test_placeholder_methods():
     corruptor = DocumentCorruptor()
 
     image = Image.new("RGB", (32, 32), "white")
-
-    with pytest.raises(NotImplementedError):
-        corruptor.rotation(image, 3)

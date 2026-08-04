@@ -196,5 +196,38 @@ class DocumentCorruptor:
         image: Image.Image,
         severity: int,
     ) -> Image.Image:
-        raise NotImplementedError(
+
+        self._validate_severity(severity)
+
+        angle_levels = {
+            1: 2,
+            2: 4,
+            3: 6,
+            4: 8,
+            5: 10,
+        }
+
+        angle = angle_levels[severity]
+
+        image_array = self._to_numpy(image)
+
+        height, width = image_array.shape[:2]
+
+        center = (width / 2, height / 2)
+
+        matrix = cv2.getRotationMatrix2D(
+            center,
+            angle,
+            1.0,
         )
+
+        rotated = cv2.warpAffine(
+            image_array,
+            matrix,
+            (width, height),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=(255, 255, 255),
+        )
+
+        return self._to_pil(rotated)
