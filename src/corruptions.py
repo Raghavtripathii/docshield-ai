@@ -7,6 +7,14 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from configs.corruption_config import (
+    GAUSSIAN_NOISE_SIGMA,
+    GAUSSIAN_BLUR_KERNEL,
+    BRIGHTNESS_FACTOR,
+    JPEG_QUALITY,
+    ROTATION_ANGLE,
+)
+
 
 @dataclass(frozen=True)
 class CorruptionResult:
@@ -71,15 +79,7 @@ class DocumentCorruptor:
 
         image_array = self._to_numpy(image).astype(np.float32)
 
-        sigma_levels = {
-            1: 5,
-            2: 10,
-            3: 15,
-            4: 25,
-            5: 35,
-        }
-
-        sigma = sigma_levels[severity]
+        sigma = GAUSSIAN_NOISE_SIGMA[severity]
 
         noise = np.random.normal(
             loc=0.0,
@@ -99,19 +99,11 @@ class DocumentCorruptor:
 
         self._validate_severity(severity)
 
-        kernel_sizes = {
-            1: (3, 3),
-            2: (5, 5),
-            3: (7, 7),
-            4: (9, 9),
-            5: (11, 11),
-        }
-
         image_array = self._to_numpy(image)
 
         blurred = cv2.GaussianBlur(
             image_array,
-            kernel_sizes[severity],
+            GAUSSIAN_BLUR_KERNEL[severity],
             sigmaX=0,
             sigmaY=0,
         )
@@ -126,17 +118,9 @@ class DocumentCorruptor:
 
         self._validate_severity(severity)
 
-        factors = {
-            1: 0.90,
-            2: 0.75,
-            3: 0.60,
-            4: 0.45,
-            5: 0.30,
-        }
-
         image_array = self._to_numpy(image).astype(np.float32)
 
-        factor = factors[severity]
+        factor = BRIGHTNESS_FACTOR[severity]
 
         darkened = image_array * factor
 
@@ -150,19 +134,11 @@ class DocumentCorruptor:
 
         self._validate_severity(severity)
 
-        quality_levels = {
-            1: 90,
-            2: 70,
-            3: 50,
-            4: 30,
-            5: 10,
-        }
-
         image_array = self._to_numpy(image)
 
         encode_params = [
             int(cv2.IMWRITE_JPEG_QUALITY),
-            quality_levels[severity],
+            JPEG_QUALITY[severity],
         ]
 
         success, encoded = cv2.imencode(
@@ -199,15 +175,7 @@ class DocumentCorruptor:
 
         self._validate_severity(severity)
 
-        angle_levels = {
-            1: 2,
-            2: 4,
-            3: 6,
-            4: 8,
-            5: 10,
-        }
-
-        angle = angle_levels[severity]
+        angle = ROTATION_ANGLE[severity]
 
         image_array = self._to_numpy(image)
 
