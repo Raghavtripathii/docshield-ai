@@ -147,8 +147,49 @@ class DocumentCorruptor:
         image: Image.Image,
         severity: int,
     ) -> Image.Image:
-        raise NotImplementedError(
+
+        self._validate_severity(severity)
+
+        quality_levels = {
+            1: 90,
+            2: 70,
+            3: 50,
+            4: 30,
+            5: 10,
+        }
+
+        image_array = self._to_numpy(image)
+
+        encode_params = [
+            int(cv2.IMWRITE_JPEG_QUALITY),
+            quality_levels[severity],
+        ]
+
+        success, encoded = cv2.imencode(
+            ".jpg",
+            cv2.cvtColor(
+                image_array,
+                cv2.COLOR_RGB2BGR,
+            ),
+            encode_params,
         )
+
+        if not success:
+            raise RuntimeError(
+                "Failed to encode JPEG image."
+            )
+
+        decoded = cv2.imdecode(
+            encoded,
+            cv2.IMREAD_COLOR,
+        )
+
+        decoded = cv2.cvtColor(
+            decoded,
+            cv2.COLOR_BGR2RGB,
+        )
+
+        return self._to_pil(decoded)
 
     def rotation(
         self,
