@@ -18,24 +18,22 @@ class AugmentationPipeline:
         self.corruption_probability = corruption_probability
         self.severities = tuple(severities)
         self.corruptor = DocumentCorruptor()
-
-        if seed is not None:
-            random.seed(seed)
+        self.random = random.Random(seed)
 
     def _random_corruption(self):
 
-        return random.choice(CORRUPTIONS)
+        return self.random.choice(CORRUPTIONS)
 
     def _random_severity(self):
 
-        return random.choice(self.severities)
+        return self.random.choice(self.severities)
 
     def apply(
         self,
         image,
     ):
 
-        if random.random() > self.corruption_probability:
+        if self.random.random() > self.corruption_probability:
             return image
 
         corruption_name = self._random_corruption()
@@ -47,7 +45,15 @@ class AugmentationPipeline:
             corruption_name,
         )
 
-        return corruption(
-            image=image,
-            severity=severity,
-        )
+        kwargs = {
+            "image": image,
+            "severity": severity,
+        }
+
+        if corruption_name == "gaussian_noise":
+            kwargs["seed"] = self.random.randint(
+                0,
+                2**32 - 1,
+            )
+
+        return corruption(**kwargs)
