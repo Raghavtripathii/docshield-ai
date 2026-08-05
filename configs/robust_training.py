@@ -1,0 +1,23 @@
+MODEL_NAME = "microsoft/layoutlmv3-base"
+
+NUM_EPOCHS = 5
+
+LEARNING_RATE = 5e-5
+
+TRAIN_BATCH_SIZE = 2
+
+EVAL_BATCH_SIZE = 2
+
+WEIGHT_DECAY = 0.01
+
+WARMUP_RATIO = 0.1
+
+LOGGING_STEPS = 50
+
+SAVE_STRATEGY = "epoch"
+
+EVALUATION_STRATEGY = "epoch"
+
+OUTPUT_DIR = "outputs/robust_layoutlmv3"
+
+SEED = 42
