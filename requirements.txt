@@ -16,3 +16,4 @@ streamlit
 jupyter
 ipywidgets
 tqdm
+easyocr
