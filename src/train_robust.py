@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from transformers import Trainer
 
+from src.compute_metrics import compute_metrics
+
 
 class RobustTrainer:
 
@@ -28,6 +30,7 @@ class RobustTrainer:
             args=self.training_args,
             train_dataset=self.train_dataset,
             eval_dataset=self.eval_dataset,
+            compute_metrics=compute_metrics,
         )
 
     def train(self):
