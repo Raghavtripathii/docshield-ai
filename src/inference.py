@@ -9,6 +9,7 @@ from transformers import (
     LayoutLMv3ForTokenClassification,
 )
 
+from src.confidence import ConfidenceAnalyzer
 from src.entity_extractor import EntityExtractor
 from src.ocr import OCRExtractor
 
@@ -29,6 +30,7 @@ class InferenceEngine:
 
         self.ocr = OCRExtractor()
         self.entity_extractor = EntityExtractor()
+        self.confidence = ConfidenceAnalyzer()
 
         self.processor = AutoProcessor.from_pretrained(
             self.model_dir,
@@ -94,6 +96,8 @@ class InferenceEngine:
             scores=scores,
         )
 
+        summary = self.confidence.summarize(entities)
+
         return {
             "words": words,
             "boxes": boxes,
@@ -101,6 +105,7 @@ class InferenceEngine:
             "labels": labels,
             "scores": scores,
             "entities": entities,
+            "confidence": summary,
             "image_size": image.size,
         }
 

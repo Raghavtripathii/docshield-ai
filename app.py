@@ -113,6 +113,27 @@ if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
         st.metric("Status", "Success")
 
     st.markdown("---")
+
+    summary = result["confidence"]
+
+    st.subheader("Confidence Analysis")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.metric("Average", f"{summary['average']:.2%}")
+
+    with c2:
+        st.metric("High", summary["high"])
+
+    with c3:
+        st.metric("Medium", summary["medium"])
+
+    with c4:
+        st.metric("Low", summary["low"])
+
+    st.markdown("---")
+
     st.subheader("Document Summary")
 
     if not entities:
@@ -120,9 +141,10 @@ if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
     else:
         for entity in entities:
             confidence = entity["score"]
-            if confidence >= 0.90:
+
+            if confidence >= 0.95:
                 badge = "🟢"
-            elif confidence >= 0.75:
+            elif confidence >= 0.80:
                 badge = "🟡"
             else:
                 badge = "🔴"
@@ -130,8 +152,8 @@ if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
             with st.container(border=True):
                 st.markdown(f"### {badge} {entity['label']}")
                 st.markdown(f"**Text**\n\n{entity['text']}")
-                st.progress(min(max(confidence, 0.0), 1.0))
-                st.caption(f"Confidence: {confidence:.2%}")
+                st.progress(confidence)
+                st.caption(f"{confidence:.2%}")
 
     st.markdown("---")
     st.subheader("Prediction JSON")
