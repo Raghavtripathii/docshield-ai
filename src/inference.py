@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import torch
 from PIL import Image
 from transformers import (
     AutoProcessor,
@@ -10,12 +11,6 @@ from transformers import (
 
 
 class InferenceEngine:
-    """
-    Lightweight inference wrapper for the trained LayoutLMv3 model.
-
-    The engine loads the processor and model from a local directory
-    produced after robust training.
-    """
 
     def __init__(
         self,
@@ -45,6 +40,7 @@ class InferenceEngine:
 
         self.model.eval()
 
+    @torch.inference_mode()
     def predict(
         self,
         image: Image.Image,
@@ -62,11 +58,39 @@ class InferenceEngine:
 
         outputs = self.model(**encoding)
 
-        predictions = outputs.logits.argmax(-1)
+        probabilities = outputs.logits.softmax(dim=-1)
+
+        prediction_ids = (
+            probabilities.argmax(dim=-1)
+            .squeeze(0)
+            .cpu()
+            .tolist()
+        )
+
+        confidence_scores = (
+            probabilities.max(dim=-1)
+            .values.squeeze(0)
+            .cpu()
+            .tolist()
+        )
+
+        if isinstance(prediction_ids, int):
+            prediction_ids = [prediction_ids]
+
+        if isinstance(confidence_scores, float):
+            confidence_scores = [confidence_scores]
+
+        labels = [
+            self.model.config.id2label[index]
+            for index in prediction_ids
+        ]
 
         return {
-            "predictions": predictions.squeeze().tolist(),
-            "logits": outputs.logits.detach().cpu(),
+            "words": words,
+            "boxes": boxes,
+            "label_ids": prediction_ids,
+            "labels": labels,
+            "scores": confidence_scores,
         }
 
     def __repr__(self) -> str:
