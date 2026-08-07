@@ -9,6 +9,8 @@ from transformers import (
     LayoutLMv3ForTokenClassification,
 )
 
+from src.ocr import OCRExtractor
+
 
 class InferenceEngine:
 
@@ -21,11 +23,10 @@ class InferenceEngine:
 
         if not self.model_dir.exists():
             raise FileNotFoundError(
-                "Trained model not found.\n\n"
-                "Expected directory:\n"
-                f"{self.model_dir}\n\n"
-                "Run robust training first or download the trained model."
+                f"Model not found: {self.model_dir}"
             )
+
+        self.ocr = OCRExtractor()
 
         self.processor = AutoProcessor.from_pretrained(
             self.model_dir,
@@ -41,7 +42,7 @@ class InferenceEngine:
         self.model.eval()
 
     @torch.inference_mode()
-    def predict(
+    def predict_words(
         self,
         image: Image.Image,
         words: list[str],
@@ -60,42 +61,69 @@ class InferenceEngine:
 
         probabilities = outputs.logits.softmax(dim=-1)
 
-        prediction_ids = (
+        label_ids = (
             probabilities.argmax(dim=-1)
             .squeeze(0)
             .cpu()
             .tolist()
         )
 
-        confidence_scores = (
+        scores = (
             probabilities.max(dim=-1)
             .values.squeeze(0)
             .cpu()
             .tolist()
         )
 
-        if isinstance(prediction_ids, int):
-            prediction_ids = [prediction_ids]
+        if isinstance(label_ids, int):
+            label_ids = [label_ids]
 
-        if isinstance(confidence_scores, float):
-            confidence_scores = [confidence_scores]
+        if isinstance(scores, float):
+            scores = [scores]
 
         labels = [
-            self.model.config.id2label[index]
-            for index in prediction_ids
+            self.model.config.id2label[label_id]
+            for label_id in label_ids
         ]
 
         return {
             "words": words,
             "boxes": boxes,
-            "label_ids": prediction_ids,
+            "label_ids": label_ids,
             "labels": labels,
-            "scores": confidence_scores,
+            "scores": scores,
+            "image_size": image.size,
         }
+
+    def predict_image(
+        self,
+        image: Image.Image,
+    ) -> dict:
+
+        words, boxes = self.ocr.extract(image)
+
+        if not words:
+            raise RuntimeError(
+                "No text detected."
+            )
+
+        return self.predict_words(
+            image=image,
+            words=words,
+            boxes=boxes,
+        )
+
+    def predict_path(
+        self,
+        image_path: str | Path,
+    ) -> dict:
+
+        image = Image.open(image_path).convert("RGB")
+
+        return self.predict_image(image)
 
     def __repr__(self) -> str:
 
         return (
-            f"InferenceEngine("
-            f"model_dir='{self.model_dir}')"
+            f"InferenceEngine(model_dir='{self.model_dir}')"
         )

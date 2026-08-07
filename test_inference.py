@@ -1,20 +1,11 @@
-from PIL import Image
+from pathlib import Path
 
 from src.inference import InferenceEngine
-from src.ocr import OCRExtractor
-
-image = Image.open("assets/sample.jpeg").convert("RGB")
-
-ocr = OCRExtractor()
-
-words, boxes = ocr.extract(image)
 
 engine = InferenceEngine()
 
-result = engine.predict(
-    image=image,
-    words=words,
-    boxes=boxes,
+result = engine.predict_path(
+    Path("assets/sample.jpeg")
 )
 
 print(result["labels"][:10])
