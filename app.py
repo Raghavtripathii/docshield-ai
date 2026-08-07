@@ -1,84 +1,120 @@
 from pathlib import Path
-
+import json
 import streamlit as st
 from PIL import Image
-
 from src.inference import InferenceEngine
 
 MODEL_DIR = Path("outputs/robust_layoutlmv3")
+
+
+@st.cache_resource
+def load_engine():
+    return InferenceEngine()
+
 
 st.set_page_config(
     page_title="DocShield AI",
     page_icon="🛡️",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
+st.sidebar.title("🛡️ DocShield AI")
+st.sidebar.markdown("---")
+st.sidebar.subheader("AI Engine")
+st.sidebar.success("LayoutLMv3")
+st.sidebar.success("EasyOCR")
+
+if MODEL_DIR.exists():
+    st.sidebar.success("Model Ready")
+else:
+    st.sidebar.error("Model Missing")
+
+st.sidebar.markdown("---")
+st.sidebar.caption("AI-powered document understanding")
+
 st.title("🛡️ DocShield AI")
+st.caption("Upload a document and let AI extract structured information.")
+st.markdown("---")
 
 uploaded_file = st.file_uploader(
-    "Upload a document",
+    "Upload Document",
     type=["png", "jpg", "jpeg"],
 )
 
-if uploaded_file is not None:
+if uploaded_file is None:
+    st.info("Upload a PNG or JPG document to begin.")
+    st.stop()
 
-    image = Image.open(uploaded_file).convert("RGB")
+image = Image.open(uploaded_file).convert("RGB")
 
-    left, right = st.columns(2)
+left, right = st.columns([1.2, 1])
 
-    with left:
-        st.image(
-            image,
+with left:
+    st.subheader("Uploaded Document")
+    st.image(image, use_container_width=True)
+
+with right:
+    st.subheader("AI Analysis")
+    engine = load_engine()
+
+    if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
+        with st.spinner("Running OCR..."):
+            result = engine.predict_image(image)
+
+        entities = result["entities"]
+        average_confidence = (
+            sum(entity["score"] for entity in entities) / len(entities)
+            if entities
+            else 0
+        )
+
+        st.success("Analysis Completed")
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Entities", len(entities))
+        with c2:
+            st.metric("Confidence", f"{average_confidence:.1%}")
+        with c3:
+            st.metric("Status", "Success")
+
+        st.markdown("---")
+        st.subheader("Document Summary")
+
+        if not entities:
+            st.warning("No entities were extracted.")
+        else:
+            for entity in entities:
+                confidence = entity["score"]
+                if confidence >= 0.90:
+                    badge = "🟢"
+                elif confidence >= 0.75:
+                    badge = "🟡"
+                else:
+                    badge = "🔴"
+
+                with st.container(border=True):
+                    st.markdown(f"### {badge} {entity['label']}")
+                    st.markdown(f"**Text**\n\n{entity['text']}")
+                    st.progress(min(max(confidence, 0.0), 1.0))
+                    st.caption(f"Confidence: {confidence:.2%}")
+
+        st.markdown("---")
+        st.subheader("Prediction JSON")
+
+        json_data = json.dumps(result, indent=4)
+        st.code(json_data, language="json")
+
+        st.download_button(
+            label="⬇ Download JSON",
+            data=json_data,
+            file_name="prediction.json",
+            mime="application/json",
             use_container_width=True,
         )
 
-    with right:
+        st.markdown("---")
 
-        if not MODEL_DIR.exists():
-            st.error("Model not found.")
-            st.stop()
-
-        engine = InferenceEngine()
-
-        if st.button(
-            "Run Inference",
-            use_container_width=True,
-        ):
-
-            with st.spinner(
-                "Running AI inference..."
-            ):
-
-                result = engine.predict_image(
-                    image
-                )
-
-            st.success("Inference completed.")
-
-            st.subheader("Extracted Entities")
-
-            if not result["entities"]:
-                st.warning(
-                    "No entities were extracted."
-                )
-
-            for entity in result["entities"]:
-
-                st.markdown(
-                    f"""
-### {entity['label']}
-
-**Text**
-
-{entity['text']}
-
-**Confidence**
-
-{entity['score']:.2%}
-
----
-"""
-                )
-
-else:
-    st.info("Upload a document image.")
+st.markdown("---")
+st.caption("DocShield AI • LayoutLMv3 + EasyOCR • Built with Streamlit")
