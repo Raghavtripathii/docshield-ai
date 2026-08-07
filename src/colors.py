@@ -1,0 +1,6 @@
+LABEL_COLORS = {
+    "HEADER": "#2563EB",
+    "QUESTION": "#059669",
+    "ANSWER": "#DC2626",
+    "OTHER": "#6B7280",
+}

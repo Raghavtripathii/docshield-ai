@@ -3,6 +3,7 @@ import json
 import streamlit as st
 from PIL import Image
 from src.inference import InferenceEngine
+from src.visualizer import PredictionVisualizer
 
 MODEL_DIR = Path("outputs/robust_layoutlmv3")
 
@@ -48,73 +49,105 @@ if uploaded_file is None:
 
 image = Image.open(uploaded_file).convert("RGB")
 
-left, right = st.columns([1.2, 1])
+engine = load_engine()
+visualizer = PredictionVisualizer()
 
-with left:
-    st.subheader("Uploaded Document")
-    st.image(image, use_container_width=True)
+if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
+    with st.spinner("Running OCR..."):
+        result = engine.predict_image(image)
 
-with right:
-    st.subheader("AI Analysis")
-    engine = load_engine()
+    annotated = visualizer.draw(
+        image,
+        result["words"],
+        result["boxes"],
+        result["labels"],
+        result["scores"],
+    )
 
-    if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
-        with st.spinner("Running OCR..."):
-            result = engine.predict_image(image)
+    entities = result["entities"]
+    average_confidence = (
+        sum(entity["score"] for entity in entities) / len(entities)
+        if entities
+        else 0
+    )
 
-        entities = result["entities"]
-        average_confidence = (
-            sum(entity["score"] for entity in entities) / len(entities)
-            if entities
-            else 0
-        )
+    st.success("Analysis Completed")
 
-        st.success("Analysis Completed")
+    left, right = st.columns(2)
 
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("Entities", len(entities))
-        with c2:
-            st.metric("Confidence", f"{average_confidence:.1%}")
-        with c3:
-            st.metric("Status", "Success")
-
-        st.markdown("---")
-        st.subheader("Document Summary")
-
-        if not entities:
-            st.warning("No entities were extracted.")
-        else:
-            for entity in entities:
-                confidence = entity["score"]
-                if confidence >= 0.90:
-                    badge = "🟢"
-                elif confidence >= 0.75:
-                    badge = "🟡"
-                else:
-                    badge = "🔴"
-
-                with st.container(border=True):
-                    st.markdown(f"### {badge} {entity['label']}")
-                    st.markdown(f"**Text**\n\n{entity['text']}")
-                    st.progress(min(max(confidence, 0.0), 1.0))
-                    st.caption(f"Confidence: {confidence:.2%}")
-
-        st.markdown("---")
-        st.subheader("Prediction JSON")
-
-        json_data = json.dumps(result, indent=4)
-        st.code(json_data, language="json")
-
-        st.download_button(
-            label="⬇ Download JSON",
-            data=json_data,
-            file_name="prediction.json",
-            mime="application/json",
+    with left:
+        st.image(
+            image,
+            caption="Original",
             use_container_width=True,
         )
 
-        st.markdown("---")
+    with right:
+        st.image(
+            annotated,
+            caption="AI Prediction",
+            use_container_width=True,
+        )
+
+    st.markdown("### Legend")
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.success("HEADER")
+
+    with c2:
+        st.info("QUESTION")
+
+    with c3:
+        st.error("ANSWER")
+
+    st.markdown("---")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Entities", len(entities))
+    with c2:
+        st.metric("Confidence", f"{average_confidence:.1%}")
+    with c3:
+        st.metric("Status", "Success")
+
+    st.markdown("---")
+    st.subheader("Document Summary")
+
+    if not entities:
+        st.warning("No entities were extracted.")
+    else:
+        for entity in entities:
+            confidence = entity["score"]
+            if confidence >= 0.90:
+                badge = "🟢"
+            elif confidence >= 0.75:
+                badge = "🟡"
+            else:
+                badge = "🔴"
+
+            with st.container(border=True):
+                st.markdown(f"### {badge} {entity['label']}")
+                st.markdown(f"**Text**\n\n{entity['text']}")
+                st.progress(min(max(confidence, 0.0), 1.0))
+                st.caption(f"Confidence: {confidence:.2%}")
+
+    st.markdown("---")
+    st.subheader("Prediction JSON")
+
+    json_data = json.dumps(result, indent=4)
+    st.code(json_data, language="json")
+
+    st.download_button(
+        label="⬇ Download JSON",
+        data=json_data,
+        file_name="prediction.json",
+        mime="application/json",
+        use_container_width=True,
+    )
+
+    st.markdown("---")
 
 st.markdown("---")
 st.caption("DocShield AI • LayoutLMv3 + EasyOCR • Built with Streamlit")
