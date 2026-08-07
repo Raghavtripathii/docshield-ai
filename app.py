@@ -156,16 +156,31 @@ if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
                 st.caption(f"{confidence:.2%}")
 
     st.markdown("---")
-    st.subheader("Prediction JSON")
+    st.subheader("Export Results")
 
     json_data = json.dumps(result, indent=4)
-    st.code(json_data, language="json")
+
+    tab1, tab2 = st.tabs(["JSON", "CSV"])
+
+    with tab1:
+        st.code(json_data, language="json")
+
+    with tab2:
+        st.code(result["csv"], language="text")
 
     st.download_button(
         label="⬇ Download JSON",
         data=json_data,
         file_name="prediction.json",
         mime="application/json",
+        use_container_width=True,
+    )
+
+    st.download_button(
+        label="⬇ Download CSV",
+        data=result["csv"],
+        file_name="prediction.csv",
+        mime="text/csv",
         use_container_width=True,
     )
 

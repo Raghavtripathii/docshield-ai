@@ -11,6 +11,7 @@ from transformers import (
 
 from src.confidence import ConfidenceAnalyzer
 from src.entity_extractor import EntityExtractor
+from src.exporter import PredictionExporter
 from src.ocr import OCRExtractor
 
 
@@ -31,6 +32,7 @@ class InferenceEngine:
         self.ocr = OCRExtractor()
         self.entity_extractor = EntityExtractor()
         self.confidence = ConfidenceAnalyzer()
+        self.exporter = PredictionExporter()
 
         self.processor = AutoProcessor.from_pretrained(
             self.model_dir,
@@ -97,6 +99,7 @@ class InferenceEngine:
         )
 
         summary = self.confidence.summarize(entities)
+        csv_data = self.exporter.to_csv(entities)
 
         return {
             "words": words,
@@ -106,6 +109,7 @@ class InferenceEngine:
             "scores": scores,
             "entities": entities,
             "confidence": summary,
+            "csv": csv_data,
             "image_size": image.size,
         }
 
