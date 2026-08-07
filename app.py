@@ -3,6 +3,8 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image
 
+from src.inference import InferenceEngine
+
 MODEL_DIR = Path("outputs/robust_layoutlmv3")
 
 st.set_page_config(
@@ -32,15 +34,38 @@ if uploaded_file is not None:
 
     with right:
 
-        if MODEL_DIR.exists():
-            st.success("Model found.")
-            st.button(
-                "Run Inference",
-                disabled=True,
-                use_container_width=True,
-            )
-        else:
-            st.error("Trained model not found.")
-            st.code("outputs/robust_layoutlmv3")
+        if not MODEL_DIR.exists():
+            st.error("Model not found.")
+            st.stop()
+
+        engine = InferenceEngine()
+
+        if st.button(
+            "Run Inference",
+            use_container_width=True,
+        ):
+
+            with st.spinner(
+                "Running AI inference..."
+            ):
+
+                result = engine.predict_image(
+                    image
+                )
+
+            st.success("Inference completed.")
+
+            st.subheader("Predictions")
+
+            for word, label, score in zip(
+                result["words"],
+                result["labels"],
+                result["scores"],
+            ):
+
+                st.write(
+                    f"**{word}** → {label} ({score:.2%})"
+                )
+
 else:
     st.info("Upload a document image.")
