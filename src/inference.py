@@ -9,6 +9,7 @@ from transformers import (
     LayoutLMv3ForTokenClassification,
 )
 
+from src.entity_extractor import EntityExtractor
 from src.ocr import OCRExtractor
 
 
@@ -27,6 +28,7 @@ class InferenceEngine:
             )
 
         self.ocr = OCRExtractor()
+        self.entity_extractor = EntityExtractor()
 
         self.processor = AutoProcessor.from_pretrained(
             self.model_dir,
@@ -86,12 +88,19 @@ class InferenceEngine:
             for label_id in label_ids
         ]
 
+        entities = self.entity_extractor.extract(
+            words=words,
+            labels=labels,
+            scores=scores,
+        )
+
         return {
             "words": words,
             "boxes": boxes,
             "label_ids": label_ids,
             "labels": labels,
             "scores": scores,
+            "entities": entities,
             "image_size": image.size,
         }
 

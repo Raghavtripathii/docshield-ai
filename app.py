@@ -55,16 +55,29 @@ if uploaded_file is not None:
 
             st.success("Inference completed.")
 
-            st.subheader("Predictions")
+            st.subheader("Extracted Entities")
 
-            for word, label, score in zip(
-                result["words"],
-                result["labels"],
-                result["scores"],
-            ):
+            if not result["entities"]:
+                st.warning(
+                    "No entities were extracted."
+                )
 
-                st.write(
-                    f"**{word}** → {label} ({score:.2%})"
+            for entity in result["entities"]:
+
+                st.markdown(
+                    f"""
+### {entity['label']}
+
+**Text**
+
+{entity['text']}
+
+**Confidence**
+
+{entity['score']:.2%}
+
+---
+"""
                 )
 
 else:
