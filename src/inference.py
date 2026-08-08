@@ -13,6 +13,7 @@ from src.confidence import ConfidenceAnalyzer
 from src.entity_extractor import EntityExtractor
 from src.exporter import PredictionExporter
 from src.ocr import OCRExtractor
+from src.validators import ImageValidator
 
 
 class InferenceEngine:
@@ -33,6 +34,7 @@ class InferenceEngine:
         self.entity_extractor = EntityExtractor()
         self.confidence = ConfidenceAnalyzer()
         self.exporter = PredictionExporter()
+        self.validator = ImageValidator()
 
         self.processor = AutoProcessor.from_pretrained(
             self.model_dir,
@@ -63,7 +65,12 @@ class InferenceEngine:
             truncation=True,
         )
 
-        outputs = self.model(**encoding)
+        try:
+            outputs = self.model(**encoding)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Inference failed: {exc}"
+            ) from exc
 
         probabilities = outputs.logits.softmax(dim=-1)
 
@@ -118,11 +125,19 @@ class InferenceEngine:
         image: Image.Image,
     ) -> dict:
 
-        words, boxes = self.ocr.extract(image)
+        self.validator.validate(image)
+
+        try:
+            words, boxes = self.ocr.extract(image)
+        except Exception as exc:
+            raise RuntimeError(
+                f"OCR failed: {exc}"
+            ) from exc
 
         if not words:
             raise RuntimeError(
-                "No text detected."
+                "No readable text was detected.\n\n"
+                "Try a higher quality image."
             )
 
         return self.predict_words(

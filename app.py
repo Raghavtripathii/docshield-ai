@@ -47,22 +47,34 @@ if uploaded_file is None:
     st.info("Upload a PNG or JPG document to begin.")
     st.stop()
 
-image = Image.open(uploaded_file).convert("RGB")
+raw_image = Image.open(uploaded_file)
+
+if raw_image.format not in (None, "PNG", "JPEG"):
+    st.warning("Unsupported image format.")
+
+image = raw_image.convert("RGB")
 
 engine = load_engine()
 visualizer = PredictionVisualizer()
 
 if st.button("🚀 Run AI Inference", use_container_width=True, type="primary"):
     with st.spinner("Running OCR..."):
-        result = engine.predict_image(image)
+        try:
+            result = engine.predict_image(image)
+        except Exception as exc:
+            st.error(str(exc))
+            st.stop()
 
-    annotated = visualizer.draw(
-        image,
-        result["words"],
-        result["boxes"],
-        result["labels"],
-        result["scores"],
-    )
+    try:
+        annotated = visualizer.draw(
+            image,
+            result["words"],
+            result["boxes"],
+            result["labels"],
+            result["scores"],
+        )
+    except Exception:
+        annotated = image
 
     entities = result["entities"]
     average_confidence = (
